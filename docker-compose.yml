@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: ./backend
+    container_name: shortener-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./frontend:/app/frontend
+      - ./data:/app/data
+    restart: unless-stopped

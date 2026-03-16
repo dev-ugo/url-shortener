@@ -60,12 +60,16 @@ url-shortener/
 | `GET` | `/links` | List all links |
 | `DELETE` | `/links/{slug}` | Delete a link |
 
-**Example**
-```bash
-curl -X POST http://localhost:8000/links \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/a-very-long-url"}'
-```
+## Rate limiting
+
+`POST /links` is limited to `10` requests per minute per IP using `slowapi`.
+
+If the limit is exceeded, the API returns HTTP `429 Too Many Requests`.
+
+## Protecting DELETE with a secret key
+
+`DELETE /links/{slug}` requires the `X-API-Key` header.
+The key must match the `DELETE_API_KEY` environment variable on the server.
 
 ```json
 {

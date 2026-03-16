@@ -1,16 +1,46 @@
 """FastAPI entrypoint and HTTP routes."""
 
-from fastapi import FastAPI
+import secrets
+
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlmodel import Session, select
 
+from config import DELETE_API_KEY
 from database import create_tables, engine
 from models import Link
 from schemas import LinkCreate, LinkRead
 from services import get_link_by_slug, get_or_create_link, to_link_read
 
+
+def get_client_ip(request: Request) -> str:
+    """Return client IP, preferring X-Forwarded-For when behind a proxy."""
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        return forwarded_for.split(",", 1)[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def verify_delete_api_key(x_api_key: str | None = Header(default=None, alias="X-API-Key")) -> None:
+    """Authorize delete operations using a shared secret header."""
+
+    if not DELETE_API_KEY:
+        raise HTTPException(
+            status_code=500,
+            detail="DELETE_API_KEY is not configured on the server.",
+        )
+
+    if not x_api_key or not secrets.compare_digest(x_api_key, DELETE_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid API key.")
+
 app = FastAPI(title="URL Shortener")
+limiter = Limiter(key_func=get_client_ip)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.on_event("startup")
 def on_startup():
@@ -19,7 +49,8 @@ def on_startup():
     create_tables()
 
 @app.post("/links", response_model=LinkRead, status_code=201)
-def create_link(body: LinkCreate):
+@limiter.limit("10/minute")
+def create_link(request: Request, body: LinkCreate):
     """Create a short link or return existing one for the same URL."""
 
     with Session(engine) as session:
@@ -37,7 +68,7 @@ def list_links():
 
 
 @app.delete("/links/{slug}", status_code=204)
-def delete_link(slug: str):
+def delete_link(slug: str, _: None = Depends(verify_delete_api_key)):
     """Delete a stored link by slug."""
 
     with Session(engine) as session:

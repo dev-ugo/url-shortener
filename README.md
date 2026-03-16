@@ -34,22 +34,38 @@ Open **http://localhost:8000**
 3. **Copy the link** using the button, or click it to be redirected
 4. **Delete a link** by hovering over it and clicking ✕
 
-> Data is kept as long as the container is running.  
-> A restart starts fresh with an empty database.
+> SQLite data is persisted in `./data/links.db` through the Docker volume `./data:/app/data`.
 
 ## Project structure
 
 ```
 url-shortener/
-├── docker-compose.yml      # Service orchestration
-├── data/                   # SQLite database (auto-generated)
+├── .github/
+│   └── workflows/
+│       └── security.yml    # CI security checks (gitleaks, pip-audit, bandit)
+├── Dockerfile              
+├── docker-compose.yml      
+├── requirements.txt        
+├── data/                   # SQLite database folder (auto-generated)
 ├── backend/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── main.py             # FastAPI app
+│   ├── config.py
+│   ├── database.py
+│   ├── main.py             
+│   ├── models.py
+│   ├── schemas.py
+│   └── services.py
 └── frontend/
-    └── index.html          # Web interface
+    ├── index.html          
+    ├── styles.css          
+    └── app.js              
 ```
+
+## Frontend assets
+
+- `GET /` serves `frontend/index.html`
+- Static files are served from `frontend/` under `/static`
+  - `/static/styles.css`
+  - `/static/app.js`
 
 ## API
 
@@ -59,17 +75,6 @@ url-shortener/
 | `GET` | `/{slug}` | Redirect to original URL |
 | `GET` | `/links` | List all links |
 | `DELETE` | `/links/{slug}` | Delete a link |
-
-## Rate limiting
-
-`POST /links` is limited to `10` requests per minute per IP using `slowapi`.
-
-If the limit is exceeded, the API returns HTTP `429 Too Many Requests`.
-
-## Protecting DELETE with a secret key
-
-`DELETE /links/{slug}` requires the `X-API-Key` header.
-The key must match the `DELETE_API_KEY` environment variable on the server.
 
 ```json
 {

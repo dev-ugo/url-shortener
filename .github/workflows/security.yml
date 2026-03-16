@@ -38,7 +38,7 @@ jobs:
         run: pip-audit -r requirements.txt --no-deps
 
   static-analysis:
-    name: Analyse statique (bandit)
+    name: Static analysis (bandit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

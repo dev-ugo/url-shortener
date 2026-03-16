@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from sqlmodel import Session, select
+from contextlib import asynccontextmanager
 
 from config import DELETE_API_KEY
 from database import create_tables, engine
@@ -21,7 +22,7 @@ def get_client_ip(request: Request) -> str:
 
     forwarded_for = request.headers.get("x-forwarded-for")
     if forwarded_for:
-        return forwarded_for.split(",", 1)[0].strip()
+        return forwarded_for.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 
@@ -37,16 +38,16 @@ def verify_delete_api_key(x_api_key: str | None = Header(default=None, alias="X-
     if not x_api_key or not secrets.compare_digest(x_api_key, DELETE_API_KEY):
         raise HTTPException(status_code=401, detail="Invalid API key.")
 
-app = FastAPI(title="URL Shortener")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Initialize database schema at application startup."""
+    create_tables()
+    yield
+
+app = FastAPI(title="URL Shortener", lifespan=lifespan) 
 limiter = Limiter(key_func=get_client_ip)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-@app.on_event("startup")
-def on_startup():
-    """Initialize database schema at application startup."""
-
-    create_tables()
 
 @app.post("/links", response_model=LinkRead, status_code=201)
 @limiter.limit("10/minute")
@@ -83,6 +84,6 @@ def redirect(slug: str):
 
     with Session(engine) as session:
         link = get_link_by_slug(session, slug)
-    return RedirectResponse(url=link.original_url, status_code=302)
+    return RedirectResponse(url=link.original_url, status_code=301)
 
 app.mount("/", StaticFiles(directory="/app/frontend", html=True), name="frontend")

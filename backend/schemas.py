@@ -4,7 +4,6 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-
 class LinkCreate(BaseModel):
     """Payload for creating a short link."""
 

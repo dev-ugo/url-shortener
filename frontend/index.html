@@ -5,379 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>URL Shortener</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #f7f6f2;
-      --surface:  #ffffff;
-      --border:   #e2e0d8;
-      --border2:  #c8c5bc;
-      --text:     #1a1917;
-      --muted:    #7a7872;
-      --accent:   #1a1917;
-      --green:    #1a6641;
-      --green-bg: #eaf4ee;
-      --red:      #a3271a;
-      --red-bg:   #fdf0ee;
-      --mono:     'IBM Plex Mono', monospace;
-      --sans:     'IBM Plex Sans', sans-serif;
-      --radius:   6px;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 15px;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-
-    /* ── Layout ── */
-    .container {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 64px 24px 80px;
-    }
-
-    /* ── Header ── */
-    header {
-      margin-bottom: 48px;
-    }
-    .wordmark {
-      font-family: var(--mono);
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    h1 {
-      font-size: 28px;
-      font-weight: 300;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      line-height: 1.2;
-    }
-    h1 strong { font-weight: 500; }
-
-    /* ── Card ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 8px;
-    }
-    input[type="text"] {
-      flex: 1;
-      height: 42px;
-      padding: 0 14px;
-      border: 1px solid var(--border2);
-      border-radius: var(--radius);
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--text);
-      background: var(--bg);
-      outline: none;
-      transition: border-color .15s;
-    }
-    input[type="text"]:focus { border-color: var(--text); }
-    input[type="text"]::placeholder { color: var(--muted); }
-
-    button {
-      height: 42px;
-      padding: 0 20px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      font-family: var(--sans);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: opacity .15s;
-    }
-    button:hover { opacity: .85; }
-    button:active { opacity: .7; }
-    button:disabled { opacity: .4; cursor: not-allowed; }
-
-    .result {
-      display: none;
-      margin-top: 16px;
-      padding: 14px 16px;
-      background: var(--green-bg);
-      border: 1px solid #b8dfc7;
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: fadeIn .2s ease;
-    }
-    .result.hidden { display: none !important; }
-    .result-url {
-      flex: 1;
-      font-family: var(--mono);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--green);
-      word-break: break-all;
-    }
-    .copy-btn {
-      height: 30px;
-      padding: 0 12px;
-      background: var(--green);
-      font-size: 12px;
-      flex-shrink: 0;
-    }
-
-    .error-box {
-      display: none;
-      margin-top: 12px;
-      padding: 10px 14px;
-      background: var(--red-bg);
-      border: 1px solid #f0c0bb;
-      border-radius: var(--radius);
-      font-size: 13px;
-      color: var(--red);
-    }
-    .error-box.show { display: block; animation: fadeIn .2s ease; }
-
-    .section-title {
-      font-family: var(--mono);
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 12px;
-    }
-
-    .links-list { display: flex; flex-direction: column; gap: 1px; }
-
-    .link-item {
-      display: grid;
-      grid-template-columns: 80px 1fr auto;
-      align-items: center;
-      gap: 16px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      transition: border-color .15s;
-      animation: fadeIn .2s ease;
-    }
-    .link-item:hover { border-color: var(--border2); }
-
-    .link-slug {
-      font-family: var(--mono);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      cursor: pointer;
-      text-decoration: none;
-    }
-    .link-slug:hover { text-decoration: underline; }
-
-    .link-original {
-      font-size: 13px;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .delete-btn {
-      height: 28px;
-      width: 28px;
-      padding: 0;
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      border-radius: var(--radius);
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity .15s, border-color .15s, color .15s;
-    }
-    .link-item:hover .delete-btn { opacity: 1; }
-    .delete-btn:hover {
-      border-color: var(--red);
-      color: var(--red);
-      opacity: 1;
-    }
-
-    .empty {
-      padding: 32px;
-      text-align: center;
-      color: var(--muted);
-      font-size: 13px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-    }
-
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%) translateY(60px);
-      background: var(--text);
-      color: #fff;
-      font-family: var(--mono);
-      font-size: 12px;
-      padding: 10px 18px;
-      border-radius: 20px;
-      opacity: 0;
-      transition: transform .25s, opacity .25s;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
-  </style>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Syne:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-<div class="container">
+<div class="noise" aria-hidden="true"></div>
 
-  <header>
-    <div class="wordmark">url-shortener</div>
-    <h1>Raccourcis tes <strong>liens longs.</strong></h1>
-  </header>
-
-  <div class="card">
-    <div class="input-row">
-      <input type="text" id="url-input" placeholder="https://exemple.com/un-lien-tres-long..."/>
-      <button id="submit-btn">Raccourcir</button>
+<main class="shell">
+  <section class="hero">
+    <div class="tag"><span class="dot"></span> Fast route, clean links</div>
+    <h1>Transforme un lien long en URL courte, nette, partageable.</h1>
+    <p>
+      Une interface plus éditoriale, une action plus directe. Colle ton URL,
+      récupère le slug, et partage en une seconde.
+    </p>
+    <div class="mini-grid">
+      <div class="mini-card">
+        <div class="mini-label">Dans la liste</div>
+        <div class="mini-value" id="today-count">--</div>
+      </div>
+      <div class="mini-card">
+        <div class="mini-label">Total affiché</div>
+        <div class="mini-value" id="total-count">0</div>
+      </div>
     </div>
-    <div class="error-box" id="error-box"></div>
-    <div class="result hidden" id="result">
-      <span class="result-url" id="result-url"></span>
-      <button class="copy-btn" id="copy-btn">Copier</button>
+  </section>
+
+  <section class="panel">
+    <div class="top-row">
+      <div class="section-title">Nouveau lien</div>
+      <div class="counter-pill" id="links-counter">0 liens</div>
     </div>
-  </div>
 
-  <div class="section-title">Liens créés</div>
-  <div id="links-list" class="links-list">
-    <div class="empty">Aucun lien pour l'instant</div>
-  </div>
+    <div class="card">
+      <div class="input-row">
+        <input type="text" id="url-input" placeholder="https://exemple.com/un-lien-vraiment-tres-long"/>
+        <button id="submit-btn" class="submit-btn">Raccourcir</button>
+      </div>
+      <div class="error-box" id="error-box"></div>
+      <div class="result hidden" id="result">
+        <span class="result-url" id="result-url"></span>
+        <button class="copy-btn" id="copy-btn">Copier</button>
+      </div>
+    </div>
 
-</div>
+    <div class="section-title" style="margin-bottom: 10px;">Liens créés</div>
+    <div id="links-list" class="links-list">
+      <div class="empty">Aucun lien pour l'instant</div>
+    </div>
+  </section>
+</main>
 
 <div class="toast" id="toast"></div>
 
-<script>
-  const API = '';
-  let toastTimer;
-
-  function toast(msg) {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
-  }
-
-  function showError(msg) {
-    const el = document.getElementById('error-box');
-    el.textContent = msg;
-    el.classList.add('show');
-  }
-
-  function hideError() {
-    document.getElementById('error-box').classList.remove('show');
-  }
-
-  async function loadLinks() {
-    const res   = await fetch(`${API}/links`);
-    const links = await res.json();
-    renderLinks(links);
-  }
-
-  function renderLinks(links) {
-    const container = document.getElementById('links-list');
-    if (!links.length) {
-      container.innerHTML = '<div class="empty">Aucun lien pour l\'instant</div>';
-      return;
-    }
-    container.innerHTML = links.map(l => `
-      <div class="link-item" id="item-${l.slug}">
-        <a class="link-slug" href="${l.short_url}" target="_blank">/${l.slug}</a>
-        <span class="link-original" title="${l.original_url}">${l.original_url}</span>
-        <button class="delete-btn" onclick="deleteLink('${l.slug}')" title="Supprimer">✕</button>
-      </div>
-    `).join('');
-  }
-
-  document.getElementById('submit-btn').addEventListener('click', createLink);
-  document.getElementById('url-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') createLink();
-  });
-
-  async function createLink() {
-    const input = document.getElementById('url-input');
-    const url   = input.value.trim();
-    if (!url) return;
-
-    hideError();
-    document.getElementById('result').classList.add('hidden');
-    document.getElementById('submit-btn').disabled = true;
-
-    try {
-      const res  = await fetch(`${API}/links`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        showError(data.detail || 'Erreur lors de la création.');
-        return;
-      }
-
-      document.getElementById('result-url').textContent = data.short_url;
-      document.getElementById('result').classList.remove('hidden');
-      input.value = '';
-      loadLinks();
-
-    } catch {
-      showError('Impossible de joindre le serveur.');
-    } finally {
-      document.getElementById('submit-btn').disabled = false;
-    }
-  }
-
-  document.getElementById('copy-btn').addEventListener('click', () => {
-    const url = document.getElementById('result-url').textContent;
-    navigator.clipboard.writeText(url).then(() => toast('Copié !'));
-  });
-
-  async function deleteLink(slug) {
-    const item = document.getElementById(`item-${slug}`);
-    item.style.opacity = '0.4';
-    try {
-      await fetch(`${API}/links/${slug}`, { method: 'DELETE' });
-      item.remove();
-      toast('Lien supprimé');
-      loadLinks();
-    } catch {
-      item.style.opacity = '1';
-      toast('Erreur lors de la suppression');
-    }
-  }
-
-  loadLinks();
-</script>
+<script src="/static/app.js"></script>
 </body>
 </html>

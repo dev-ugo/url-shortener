@@ -4,6 +4,7 @@ import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -48,6 +49,13 @@ app = FastAPI(title="URL Shortener", lifespan=lifespan)
 limiter = Limiter(key_func=get_client_ip)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.mount("/static", StaticFiles(directory="/app/frontend"), name="frontend-static")
+
+@app.get("/", include_in_schema=False)
+def frontend_index():
+    """Serve the frontend entrypoint."""
+
+    return FileResponse("/app/frontend/index.html")
 
 @app.post("/links", response_model=LinkRead, status_code=201)
 @limiter.limit("10/minute")
@@ -85,5 +93,3 @@ def redirect(slug: str):
     with Session(engine) as session:
         link = get_link_by_slug(session, slug)
     return RedirectResponse(url=link.original_url, status_code=301)
-
-app.mount("/", StaticFiles(directory="/app/frontend", html=True), name="frontend")
